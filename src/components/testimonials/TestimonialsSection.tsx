@@ -76,15 +76,26 @@ const testimonials: Testimonial[] = [
 // Duplicate items for seamless infinite loop
 const marqueeItems = [...testimonials, ...testimonials];
 
-/** Pixels scrolled per frame at 60 fps */
+/** Pixels per frame at ~60 fps */
 const SCROLL_SPEED = 0.7;
+/** Min px moved to count as drag (prevents accidental drag on tap) */
+const DRAG_THRESHOLD = 5;
 
 const TestimonialsSection = () => {
   const [active, setActive] = useState<Testimonial | null>(null);
   const x = useMotionValue(0);
   const trackRef = useRef<HTMLDivElement>(null);
   const halfWidth = useRef(0);
-  const dragging = useRef(false);
+
+  /* Drag state (refs to avoid re-renders) */
+  const pointerDown = useRef(false);
+  const didDrag = useRef(false);
+  const startX = useRef(0);
+  const startVal = useRef(0);
+  const velocity = useRef(0);
+  const lastPointerX = useRef(0);
+  const lastPointerTime = useRef(0);
+  const momentumRaf = useRef(0);
 
   /* Measure half the track (= one set of items) */
   useEffect(() => {
@@ -105,11 +116,104 @@ const TestimonialsSection = () => {
     return ((v % hw) + hw) % hw - hw;
   }, []);
 
-  /* Continuous auto-scroll (only pauses during active drag) */
+  /* ── Continuous auto-scroll ── */
   useAnimationFrame((_, delta) => {
-    if (dragging.current || halfWidth.current <= 0) return;
+    if (pointerDown.current || halfWidth.current <= 0) return;
     x.set(wrap(x.get() - SCROLL_SPEED * (delta / 16)));
   });
+
+  /* ── Manual pointer-based drag ── */
+  const onPointerDown = useCallback(
+    (e: React.PointerEvent) => {
+      /* Cancel any running momentum */
+      if (momentumRaf.current) {
+        cancelAnimationFrame(momentumRaf.current);
+        momentumRaf.current = 0;
+      }
+
+      pointerDown.current = true;
+      didDrag.current = false;
+      startX.current = e.clientX;
+      startVal.current = x.get();
+      velocity.current = 0;
+      lastPointerX.current = e.clientX;
+      lastPointerTime.current = performance.now();
+
+      /* Capture pointer so we get move/up even outside the element */
+      (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    },
+    [x]
+  );
+
+  const onPointerMove = useCallback(
+    (e: React.PointerEvent) => {
+      if (!pointerDown.current) return;
+
+      const dx = e.clientX - startX.current;
+
+      /* Mark as drag once past threshold */
+      if (!didDrag.current && Math.abs(dx) > DRAG_THRESHOLD) {
+        didDrag.current = true;
+      }
+
+      /* Track velocity for momentum */
+      const now = performance.now();
+      const dt = now - lastPointerTime.current;
+      if (dt > 0) {
+        velocity.current = (e.clientX - lastPointerX.current) / dt; // px/ms
+      }
+      lastPointerX.current = e.clientX;
+      lastPointerTime.current = now;
+
+      /* Move the track — direct, no spring, 1:1 with finger */
+      x.set(wrap(startVal.current + dx));
+    },
+    [x, wrap]
+  );
+
+  const onPointerUp = useCallback(
+    (e: React.PointerEvent) => {
+      if (!pointerDown.current) return;
+      pointerDown.current = false;
+
+      (e.target as HTMLElement).releasePointerCapture(e.pointerId);
+
+      /* Apply momentum (decelerate naturally) */
+      const v0 = velocity.current; // px/ms
+      if (Math.abs(v0) > 0.1) {
+        const friction = 0.95;
+        let vel = v0 * 16; // convert to px/frame (~16ms)
+
+        const step = () => {
+          vel *= friction;
+          if (Math.abs(vel) < 0.3) {
+            momentumRaf.current = 0;
+            return;
+          }
+          x.set(wrap(x.get() + vel));
+          momentumRaf.current = requestAnimationFrame(step);
+        };
+        momentumRaf.current = requestAnimationFrame(step);
+      }
+    },
+    [x, wrap]
+  );
+
+  /* Card click handler — ignore if it was a drag */
+  const handleSelect = useCallback(
+    (t: Testimonial) => {
+      if (didDrag.current) return;
+      setActive(t);
+    },
+    []
+  );
+
+  /* Cleanup momentum on unmount */
+  useEffect(() => {
+    return () => {
+      if (momentumRaf.current) cancelAnimationFrame(momentumRaf.current);
+    };
+  }, []);
 
   return (
     <section
@@ -188,29 +292,22 @@ const TestimonialsSection = () => {
           }}
         />
 
+        {/* Track — NO drag="x", just motion.div for reactive translateX */}
         <motion.div
           ref={trackRef}
           className="flex w-max cursor-grab gap-5 select-none px-4 active:cursor-grabbing sm:gap-6"
-          style={{ x, touchAction: "pan-y" }}
-          drag="x"
-          dragElastic={0.08}
-          dragMomentum={false}
-          dragTransition={{ bounceStiffness: 300, bounceDamping: 30 }}
-          dragConstraints={{ left: -999999, right: 999999 }}
-          onDragStart={() => {
-            dragging.current = true;
-          }}
-          onDragEnd={() => {
-            dragging.current = false;
-            x.set(wrap(x.get()));
-          }}
+          style={{ x, touchAction: "pan-y", willChange: "transform" }}
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={onPointerUp}
+          onPointerCancel={onPointerUp}
         >
           {marqueeItems.map((t, i) => (
             <div
               key={`${t.id}-${i}`}
               className="w-[300px] shrink-0 sm:w-[340px] lg:w-[370px]"
             >
-              <TestimonialCard testimonial={t} onSelect={setActive} />
+              <TestimonialCard testimonial={t} onSelect={handleSelect} />
             </div>
           ))}
         </motion.div>

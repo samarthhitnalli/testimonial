@@ -1,5 +1,4 @@
 import { Play, Star } from "lucide-react";
-import { Card } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 export interface Testimonial {
@@ -24,8 +23,21 @@ const TestimonialCard = ({ testimonial, onSelect }: Props) => {
   const hasVideo = !!videoUrl;
 
   return (
-    <Card
-      className="flex h-full cursor-pointer flex-col rounded-2xl border border-border/60 bg-white p-5 shadow-sm transition-shadow duration-300 hover:shadow-md"
+    <div
+      className="flex h-full cursor-pointer flex-col overflow-hidden rounded-xl p-5 font-[Inter,sans-serif] transition-all duration-200"
+      style={{
+        background: "rgba(255,255,255,0.08)",
+        border: "1px solid rgba(255,255,255,0.15)",
+        boxShadow: "0 4px 24px rgba(0,0,0,0.15)",
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.background = "rgba(255,255,255,0.12)";
+        e.currentTarget.style.boxShadow = "0 8px 32px rgba(0,0,0,0.25)";
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.background = "rgba(255,255,255,0.08)";
+        e.currentTarget.style.boxShadow = "0 4px 24px rgba(0,0,0,0.15)";
+      }}
       role="button"
       tabIndex={0}
       onClick={() => onSelect(testimonial)}
@@ -37,7 +49,7 @@ const TestimonialCard = ({ testimonial, onSelect }: Props) => {
       }}
       aria-label={`View testimonial from ${name}`}
     >
-      {/* Thumbnail — play icon overlay on video cards */}
+      {/* ── Thumbnail (16:9, rounded) ── */}
       <div className="group relative overflow-hidden rounded-lg">
         <img
           src={thumbnail}
@@ -45,61 +57,79 @@ const TestimonialCard = ({ testimonial, onSelect }: Props) => {
           loading="lazy"
           width={800}
           height={450}
-          className="aspect-video w-full object-cover transition-transform duration-500 group-hover:scale-105"
+          className="aspect-video w-full object-cover transition-transform duration-400 group-hover:scale-[1.03]"
         />
         {hasVideo && (
           <>
-            <span className="absolute inset-0 bg-foreground/10 transition-colors duration-300 group-hover:bg-foreground/20" />
+            <span className="absolute inset-0 bg-black/20 transition-colors duration-200 group-hover:bg-black/30" />
             <span className="absolute inset-0 flex items-center justify-center">
-              <span className="flex h-14 w-14 items-center justify-center rounded-full bg-background/90 shadow-md backdrop-blur-sm transition-transform duration-300 group-hover:scale-110">
-                <Play className="h-6 w-6 translate-x-0.5 fill-primary text-primary" />
+              <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white/90 shadow-sm transition-transform duration-200 group-hover:scale-110">
+                <Play className="h-5 w-5 translate-x-0.5 fill-[#2EA8FF] text-[#2EA8FF]" />
               </span>
             </span>
           </>
         )}
       </div>
 
-      {/* Rating */}
-      <div
-        className="mt-4 flex items-center gap-0.5"
-        aria-label={`${rating} out of 5 stars`}
+      {/* ── Quote (2–3 lines) ── */}
+      <p
+        className="mt-4 flex-1 text-[14px] leading-relaxed line-clamp-3"
+        style={{ color: "#B8D4EA" }}
       >
-        {Array.from({ length: 5 }).map((_, i) => (
-          <Star
-            key={i}
-            className={`h-4 w-4 ${
-              i < rating
-                ? "fill-amber-400 text-amber-400"
-                : "fill-muted text-muted"
-            }`}
-          />
-        ))}
-      </div>
-
-      {/* Quote */}
-      <p className="mt-3 flex-1 text-[15px] leading-relaxed text-muted-foreground line-clamp-3">
         &ldquo;{quote}&rdquo;
       </p>
 
-      {/* Author */}
-      <div className="mt-6 flex items-center gap-3 border-t border-border/50 pt-4">
-        <Avatar className="h-10 w-10">
+      {/* ── Author row ── */}
+      <div
+        className="mt-5 flex items-center gap-3 pt-4"
+        style={{ borderTop: "1px solid rgba(255,255,255,0.1)" }}
+      >
+        <Avatar className="h-9 w-9 shrink-0">
           <AvatarImage src={avatar} alt={name} />
-          <AvatarFallback className="text-xs font-medium">
+          <AvatarFallback
+            className="text-[11px] font-medium"
+            style={{ background: "rgba(255,255,255,0.12)", color: "#B8D4EA" }}
+          >
             {name
               .split(" ")
               .map((n) => n[0])
               .join("")}
           </AvatarFallback>
         </Avatar>
-        <div className="min-w-0">
-          <p className="truncate text-sm font-semibold text-foreground">
+
+        <div className="min-w-0 flex-1">
+          <p
+            className="truncate text-[13px] font-semibold"
+            style={{ color: "#EAF4FF" }}
+          >
             {name}
           </p>
-          <p className="truncate text-xs text-muted-foreground">{business}</p>
+          <p
+            className="truncate text-[12px]"
+            style={{ color: "#8AAFC4" }}
+          >
+            {business}
+          </p>
+        </div>
+
+        {/* Rating (compact, right-aligned) */}
+        <div
+          className="flex shrink-0 items-center gap-px"
+          aria-label={`${rating} out of 5 stars`}
+        >
+          {Array.from({ length: 5 }).map((_, i) => (
+            <Star
+              key={i}
+              className={`h-3.5 w-3.5 ${
+                i < rating
+                  ? "fill-amber-400 text-amber-400"
+                  : "fill-[rgba(255,255,255,0.15)] text-[rgba(255,255,255,0.15)]"
+              }`}
+            />
+          ))}
         </div>
       </div>
-    </Card>
+    </div>
   );
 };
 

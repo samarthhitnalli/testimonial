@@ -18,22 +18,20 @@ const TestimonialModal = ({ testimonial, onClose }: Props) => {
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-2xl gap-0 overflow-hidden p-0 sm:rounded-xl">
+      <DialogContent className="max-w-2xl gap-0 overflow-hidden border-[#E2E8F0] p-0 font-[Inter,sans-serif] sm:rounded-xl">
         <DialogTitle className="sr-only">
           {testimonial
             ? `Testimonial from ${testimonial.name}`
             : "Testimonial"}
         </DialogTitle>
         <DialogDescription className="sr-only">
-          {testimonial
-            ? `${testimonial.business} testimonial`
-            : ""}
+          {testimonial ? `${testimonial.business} testimonial` : ""}
         </DialogDescription>
 
         {testimonial && (
           <>
-            {/* ---- Media: video or image ---- */}
-            <div className="aspect-video w-full bg-muted">
+            {/* ── Media: video or image (prominent, 16:9) ── */}
+            <div className="aspect-video w-full bg-[#F1F5F9]">
               {testimonial.videoUrl ? (
                 testimonial.videoUrl.endsWith(".mp4") ? (
                   <video
@@ -61,27 +59,27 @@ const TestimonialModal = ({ testimonial, onClose }: Props) => {
               )}
             </div>
 
-            {/* ---- Details ---- */}
-            <div className="space-y-4 px-6 py-5">
-              {/* Author */}
+            {/* ── Details ── */}
+            <div className="space-y-5 px-6 py-6">
+              {/* Author row */}
               <div className="flex items-center gap-3">
-                <Avatar className="h-12 w-12">
+                <Avatar className="h-11 w-11 shrink-0">
                   <AvatarImage
                     src={testimonial.avatar}
                     alt={testimonial.name}
                   />
-                  <AvatarFallback className="text-sm font-medium">
+                  <AvatarFallback className="bg-[#F1F5F9] text-xs font-medium text-[#475569]">
                     {testimonial.name
                       .split(" ")
                       .map((n) => n[0])
                       .join("")}
                   </AvatarFallback>
                 </Avatar>
-                <div>
-                  <p className="text-base font-semibold text-foreground">
+                <div className="min-w-0 flex-1">
+                  <p className="text-[15px] font-semibold text-[#0F172A]">
                     {testimonial.name}
                   </p>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-[13px] text-[#475569]">
                     {testimonial.business}
                   </p>
                 </div>
@@ -95,17 +93,17 @@ const TestimonialModal = ({ testimonial, onClose }: Props) => {
                 {Array.from({ length: 5 }).map((_, i) => (
                   <Star
                     key={i}
-                    className={`h-[18px] w-[18px] ${
+                    className={`h-4 w-4 ${
                       i < testimonial.rating
                         ? "fill-amber-400 text-amber-400"
-                        : "fill-muted text-muted"
+                        : "fill-[#E2E8F0] text-[#E2E8F0]"
                     }`}
                   />
                 ))}
               </div>
 
-              {/* Full quote */}
-              <p className="text-[15px] leading-relaxed text-muted-foreground">
+              {/* Full quote (expanded, not truncated) */}
+              <p className="text-[15px] leading-relaxed text-[#475569]">
                 &ldquo;{testimonial.quote}&rdquo;
               </p>
             </div>

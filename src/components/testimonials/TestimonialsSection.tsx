@@ -73,10 +73,10 @@ const testimonials: Testimonial[] = [
   },
 ];
 
-// Duplicate items so the -50% translateX trick creates a seamless infinite loop
+// Duplicate items for seamless infinite loop
 const marqueeItems = [...testimonials, ...testimonials];
 
-/** Pixels scrolled per frame at 60 fps — increase for faster scroll */
+/** Pixels scrolled per frame at 60 fps */
 const SCROLL_SPEED = 0.7;
 
 const TestimonialsSection = () => {
@@ -86,7 +86,7 @@ const TestimonialsSection = () => {
   const halfWidth = useRef(0);
   const dragging = useRef(false);
 
-  /* ---- Measure half the track (= one full set of items) ---- */
+  /* Measure half the track (= one set of items) */
   useEffect(() => {
     const measure = () => {
       if (trackRef.current) {
@@ -98,14 +98,14 @@ const TestimonialsSection = () => {
     return () => window.removeEventListener("resize", measure);
   }, []);
 
-  /* ---- Wrap x into [-halfWidth, 0) for seamless looping ---- */
+  /* Wrap x into [-halfWidth, 0) for seamless looping */
   const wrap = useCallback((v: number) => {
     const hw = halfWidth.current;
     if (hw <= 0) return v;
     return ((v % hw) + hw) % hw - hw;
   }, []);
 
-  /* ---- Continuous auto-scroll (only pauses during active drag) ---- */
+  /* Continuous auto-scroll (only pauses during active drag) */
   useAnimationFrame((_, delta) => {
     if (dragging.current || halfWidth.current <= 0) return;
     x.set(wrap(x.get() - SCROLL_SPEED * (delta / 16)));
@@ -114,11 +114,25 @@ const TestimonialsSection = () => {
   return (
     <section
       id="testimonials"
-      className="bg-background py-20 sm:py-28"
+      className="font-[Inter,sans-serif] relative overflow-hidden"
+      style={{
+        background: "linear-gradient(135deg, #0E4A7B, #0A2540)",
+      }}
       aria-labelledby="testimonials-heading"
     >
-      <div className="mx-auto max-w-7xl px-6 lg:px-8">
-        {/* Header */}
+      {/* ── Subtle decorative glow ── */}
+      <div
+        className="pointer-events-none absolute -top-32 left-1/2 -translate-x-1/2"
+        style={{
+          width: "600px",
+          height: "400px",
+          background:
+            "radial-gradient(ellipse at center, rgba(46,168,255,0.1) 0%, transparent 70%)",
+        }}
+      />
+
+      {/* ── Header ── */}
+      <div className="mx-auto max-w-7xl px-6 pt-16 sm:pt-20 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -126,38 +140,62 @@ const TestimonialsSection = () => {
           transition={{ duration: 0.5, ease: "easeOut" }}
           className="mx-auto max-w-2xl text-center"
         >
-          <span className="inline-block rounded-full border border-border bg-secondary px-3 py-1 text-xs font-medium tracking-wide text-muted-foreground">
+          <span
+            className="inline-block rounded-full px-3 py-1 text-xs font-medium tracking-wide"
+            style={{
+              background: "rgba(255,255,255,0.08)",
+              border: "1px solid rgba(255,255,255,0.15)",
+              color: "#B8D4EA",
+            }}
+          >
             TESTIMONIALS
           </span>
           <h2
             id="testimonials-heading"
-            className="mt-5 text-3xl font-bold tracking-tight text-foreground sm:text-4xl lg:text-[44px] lg:leading-[1.1]"
+            className="mt-5 text-3xl font-bold tracking-tight sm:text-4xl lg:text-[44px] lg:leading-[1.1]"
+            style={{ color: "#EAF4FF" }}
           >
             Trusted by Real Businesses
           </h2>
-          <p className="mt-4 text-base leading-relaxed text-muted-foreground sm:text-lg">
+          <p
+            className="mt-4 text-base leading-relaxed sm:text-lg"
+            style={{ color: "#B8D4EA" }}
+          >
             Hear from the founders, doctors, and entrepreneurs who use Raysoft AI
             every day to grow faster and serve their customers better.
           </p>
         </motion.div>
       </div>
 
-      {/* Marquee — full-bleed, continuous, seamless, draggable */}
+      {/* ── Marquee ── */}
       <div
-        className="relative mt-14 overflow-hidden"
+        className="relative mt-10 overflow-hidden pb-16 sm:pb-20"
         aria-label="Continuously scrolling customer testimonials"
       >
-        {/* Edge fades */}
-        <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-16 bg-gradient-to-r from-background to-transparent sm:w-28" />
-        <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-16 bg-gradient-to-l from-background to-transparent sm:w-28" />
+        {/* Edge fades (gradient-matched) */}
+        <div
+          className="pointer-events-none absolute inset-y-0 left-0 z-10 w-12 sm:w-24"
+          style={{
+            background:
+              "linear-gradient(to right, #0E4A7B, transparent)",
+          }}
+        />
+        <div
+          className="pointer-events-none absolute inset-y-0 right-0 z-10 w-12 sm:w-24"
+          style={{
+            background:
+              "linear-gradient(to left, #0A2540, transparent)",
+          }}
+        />
 
         <motion.div
           ref={trackRef}
-          className="flex w-max cursor-grab gap-5 select-none active:cursor-grabbing sm:gap-6"
-          style={{ x }}
+          className="flex w-max cursor-grab gap-5 select-none px-4 active:cursor-grabbing sm:gap-6"
+          style={{ x, touchAction: "pan-y" }}
           drag="x"
-          dragElastic={0}
+          dragElastic={0.08}
           dragMomentum={false}
+          dragTransition={{ bounceStiffness: 300, bounceDamping: 30 }}
           dragConstraints={{ left: -999999, right: 999999 }}
           onDragStart={() => {
             dragging.current = true;
@@ -170,7 +208,7 @@ const TestimonialsSection = () => {
           {marqueeItems.map((t, i) => (
             <div
               key={`${t.id}-${i}`}
-              className="w-[300px] shrink-0 sm:w-[340px] lg:w-[380px]"
+              className="w-[300px] shrink-0 sm:w-[340px] lg:w-[370px]"
             >
               <TestimonialCard testimonial={t} onSelect={setActive} />
             </div>
@@ -178,7 +216,10 @@ const TestimonialsSection = () => {
         </motion.div>
       </div>
 
-      <TestimonialModal testimonial={active} onClose={() => setActive(null)} />
+      <TestimonialModal
+        testimonial={active}
+        onClose={() => setActive(null)}
+      />
     </section>
   );
 };
